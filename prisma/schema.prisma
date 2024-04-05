@@ -1,0 +1,155 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  uuid          String   @id @default(uuid()) @db.Uuid
+  email         String   @unique
+  name          String
+  description   String?
+  avatar        String?
+  role          String
+  passwordHash  String   @map("password_hash")
+  recoveryToken String?  @unique
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  Review        Review[]
+
+  @@map("user")
+}
+
+model Post {
+  uuid            String           @id @default(uuid()) @db.Uuid
+  views           Int              @default(0) @map("views")
+  alias           String           @unique @map("alias")
+  description     String           @map("description")
+  finalText       String?          @map("final_text")
+  title           String           @map("title")
+  metaTitle       String           @map("meta_title")
+  metaDescription String           @map("meta_description")
+  ratingName      String           @map("rating_name")
+  articleImage    String           @map("article_image")
+  creatorUuid     String           @map("creator_uuid") @db.Uuid
+  status          String           @map("status")
+  lastEditorUuid  String           @map("last_editor_uuid") @db.Uuid
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  author          Author?          @relation(fields: [authorUuid], references: [uuid])
+  category        Category         @relation(fields: [categoryUuid], references: [uuid])
+  products        Product[]
+  questionAnswers QuestionAnswer[]
+  authorUuid      String?          @map("author_uuid") @db.Uuid
+  categoryUuid    String           @map("category_uuid") @db.Uuid
+  domain          Domain?          @relation(fields: [domainUuid], references: [uuid])
+  domainUuid      String?          @map("domain_uuid") @db.Uuid
+
+  @@map("post")
+}
+
+model Product {
+  uuid        String        @id @default(uuid()) @db.Uuid
+  images      String[]      @map("images")
+  title       String        @map("title")
+  rating      Float         @map("rating")
+  pros        String[]      @map("pros")
+  cons        String[]      @map("cons")
+  features    String[]      @map("features")
+  mainFeature String        @map("main_feature")
+  contentMd   String        @map("content_md")
+  linkButton  String?       @map("link_button")
+  postUuid    String        @map("post_uuid") @db.Uuid
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  post        Post          @relation(fields: [postUuid], references: [uuid], onDelete: Cascade)
+  clickCount  Int           @default(0) @map("click_count")
+  assessments Assessments[]
+  reviews      Review[]
+
+  @@map("product")
+}
+
+enum ReviewStatus {
+  NEW
+  APPROVED
+  REJECTED
+}
+
+model Review {
+  uuid        String       @id @default(uuid()) @db.Uuid
+  description String       @map("description")
+  rating      Int          @map("rating")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  publishedAt DateTime     @default(now()) @map("created_at")
+  productUuid String       @map("product_uuid") @db.Uuid
+  product     Product      @relation(fields: [productUuid], references: [uuid], onDelete: Cascade)
+  userUuid    String       @map("user_uuid") @db.Uuid
+  user        User         @relation(fields: [userUuid], references: [uuid], onDelete: Cascade)
+  likes       Int          @default(0) @map("likes")
+  dislikes    Int          @default(0) @map("dislikes")
+  status      ReviewStatus @default(NEW) @map("status")
+
+  @@map("review")
+}
+
+model Category {
+  uuid      String   @id @default(uuid()) @db.Uuid
+  title     String   @map("title")
+  order     Int      @default(0) @map("order")
+  alias     String   @map("alias")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  posts     Post[]
+
+  @@map("category")
+}
+
+model QuestionAnswer {
+  uuid      String   @id @default(uuid()) @db.Uuid
+  question  String?  @map("question")
+  answer    String?  @map("answer")
+  postUuid  String   @map("post_uuid") @db.Uuid
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  post      Post     @relation(fields: [postUuid], references: [uuid], onDelete: Cascade)
+
+  @@map("question_answer")
+}
+
+model Assessments {
+  uuid        String   @id @default(uuid()) @db.Uuid
+  like        Int      @map("like")
+  dislike     Int      @map("dislike")
+  productUuid String   @unique @map("product_uuid") @db.Uuid
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  product     Product  @relation(fields: [productUuid], references: [uuid], onDelete: Cascade)
+
+  @@map("assessments")
+}
+
+model Author {
+  uuid      String   @id @default(uuid()) @db.Uuid
+  photo     String   @map("photo")
+  name      String   @map("name")
+  order     Int      @default(0) @map("order")
+  position  String   @map("position")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  posts     Post[]
+
+  @@map("author")
+}
+
+model Domain {
+  uuid String @id @default(uuid()) @db.Uuid
+  name String @map("name")
+  post Post[]
+}
